@@ -1,0 +1,54 @@
+name: "Terraform Deploy OCI"
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  terraform:
+    name: "Terraform apply"
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: "1.7.5"
+
+      - name: Configurar credenciales OCI
+        run: |
+          mkdir -p ~/.oci
+          echo "${{ secrets.OCI_API_KEY_PEM }}" > ~/.oci/api_key.pem
+          chmod 600 ~/.oci/api_key.pem
+
+      - name: Terraform init
+        run: terraform init
+
+      - name: Terraform Apply con intentos
+        run: |
+          for i in {1..5}; do
+            echo "Intento $i de crear la instancia en OCI..."
+            if terraform apply -auto-approve; then
+              echo "Despliegue realizado y exitoso"
+              exit 0
+            fi
+            echo "Oracle sin capacidad de hosts esperando 15 segundos"
+            sleep 15
+          done
+          echo "Error: no se pudo desplegar tras varios intentos"
+          exit 1
+        env:
+          TF_VAR_tenancy_ocid: ${{ secrets.OCI_TENANCY_OCID }}
+          TF_VAR_user_ocid: ${{ secrets.OCI_USER_OCID }}
+          TF_VAR_fingerprint: ${{ secrets.OCI_FINGERPRINT }}
+          TF_VAR_private_key_path: /home/runner/.oci/api_key.pem
+          TF_VAR_region: ${{ secrets.OCI_REGION }}
+          TF_VAR_compartment_ocid: ${{ secrets.OCI_COMPARTMENT_OCID }}
+          TF_VAR_ubuntu_2404_image_ocid: ${{ secrets.OCI_IMAGE_OCID }}
+          TF_VAR_ssh_public_key: ${{ secrets.OCI_SSH_PUBLIC_KEY }}
+          TF_VAR_subnet_ocid: ${{ secrets.OCI_SUBNET_OCID }}
+          TF_VAR_availability_domain: ${{ secrets.OCI_AVAILABILITY_DOMAIN }}
