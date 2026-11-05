@@ -24,9 +24,13 @@ jobs:
           mkdir -p ~/.oci
           printf '%s\n' "${{ secrets.OCI_API_KEY_PEM }}" > ~/.oci/api_key.pem
           chmod 600 ~/.oci/api_key.pem
-          # Verificar que el PEM tiene el formato correcto
+          echo "=== Verificacion del PEM ==="
+          echo "Primera linea:"
           head -1 ~/.oci/api_key.pem
+          echo "Total de lineas:"
           wc -l ~/.oci/api_key.pem
+          echo "Validacion OpenSSL:"
+          openssl rsa -check -noout -in ~/.oci/api_key.pem && echo "PEM VALIDO" || echo "PEM INVALIDO"
 
       - name: Terraform init
         run: terraform init
