@@ -22,8 +22,11 @@ jobs:
       - name: Configurar credenciales OCI
         run: |
           mkdir -p ~/.oci
-          echo "${{ secrets.OCI_API_KEY_PEM }}" > ~/.oci/api_key.pem
+          printf '%s\n' "${{ secrets.OCI_API_KEY_PEM }}" > ~/.oci/api_key.pem
           chmod 600 ~/.oci/api_key.pem
+          # Verificar que el PEM tiene el formato correcto
+          head -1 ~/.oci/api_key.pem
+          wc -l ~/.oci/api_key.pem
 
       - name: Terraform init
         run: terraform init
